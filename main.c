@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define OPTION_LINE 'o'
 #define OPEN_BLOCK_LINE 'b'
@@ -38,6 +39,8 @@ typedef struct Block {
   struct Variable **variables;
   struct Block **childs;
 } Block;
+
+void print_block(Block *block, int depth);
 
 Block *make_block() {
   Block *block = (Block *)malloc(sizeof(Block));
@@ -156,17 +159,15 @@ Variable *parse_var(char *ltype, FILE *stream) {
   return var;
 }
 
-void parse_block(char *name, FILE *stream, Block *block) {
+Block *parse_block(char *name, FILE *stream) {
+  Block *block = make_block();
   char *line = NULL;
   ssize_t len = 0;
   ssize_t nread = 0;
   char word[BUFSIZ];
   WORDS *words;
 
-  char *first_pname = name;
-
-  skip_pwhitespace(name);
-
+  trim(name, name, strlen(name));
   block->name = strdup(name);
 
   while (getline(&line, &len, stream) != -1) {
@@ -174,20 +175,17 @@ void parse_block(char *name, FILE *stream, Block *block) {
 
     while ((nread = get_next_word(words, word)) != '\0') {
       if (strncmp(word, CLOSE_BLOCK, 2) == 0) {
-        return;
+        return block;
       } else if (strncmp(word, VAR_SECTION, 2) == 0) {
-        parse_var(line, stream);
+        block->variables[block->varno] = parse_var(line, stream);
         block->varno++;
       } else if (strncmp(word, OPEN_BLOCK, 2) == 0) {
-        Block *child_block = make_block();
-        block->childs[block->childno] = child_block;
+        block->childs[block->childno] = parse_block(line + nread + 1, stream);
         block->childno++;
-        parse_block(line + nread + 1, stream, child_block);
       }
     }
   }
-
-  free(first_pname);
+  return block;
 }
 
 int main(int argc, char *argv[]) {
@@ -201,6 +199,7 @@ int main(int argc, char *argv[]) {
 
   Options *options = (Options *)malloc(sizeof(Options));
   Block *main_block = make_block();
+  main_block->name = "Configuration";
 
   if (argc != 2) {
     fprintf(stderr, "Usage: %s <path>\n", argv[0]);
@@ -226,7 +225,8 @@ int main(int argc, char *argv[]) {
           parse_option(line + 2, options);
           break;
         case OPEN_BLOCK_LINE:
-          parse_block(line + 2, stream, main_block);
+          main_block->childs[main_block->childno++] =
+              parse_block(line + 2, stream);
           break;
         default:
           fprintf(stderr, "Invalid section '%c'\n", line[i + 1]);
@@ -236,8 +236,60 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  print_block(main_block, 0);
+
   free(options);
   free(line);
   fclose(stream);
   exit(EXIT_SUCCESS);
+}
+
+void print_block(Block *block, int depth) {
+  char tabs[20];
+  int nspace;
+  int next_depth;
+  int i;
+
+  if (depth != 0) {
+    next_depth = depth + 1;
+    nspace = pow(2, depth);
+  } else {
+    nspace = 0;
+    next_depth = 1;
+  }
+
+  for (i = 0; i < nspace; i++) {
+    tabs[i] = ' ';
+  }
+
+  tabs[i] = '\0';
+  if (depth == 0) {
+    printf("interface %s {\n", block->name);
+  } else {
+    printf("%s%s: {\n", tabs, block->name);
+  }
+
+  for (int i = 0; i < block->varno; i++) {
+    char *identifier = block->variables[i]->identifier;
+    char *type;
+
+    if (block->variables[i]->type == INT) {
+      type = "number";
+    } else if (block->variables[i]->type == STR) {
+      type = "string";
+    } else if (block->variables[i]->type == BOOL) {
+      type = "boolean";
+    }
+    printf("%s  %s: %s;\n", tabs, identifier, type);
+  }
+
+  for (int i = 0; i < block->childno; i++) {
+    print_block(block->childs[i], next_depth);
+  }
+
+  if (depth == 0) {
+    printf("};\n");
+  } else {
+    printf("%s};\n", tabs);
+  }
 }
