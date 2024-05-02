@@ -1,10 +1,10 @@
 #include "get_words.c"
 #include <ctype.h>
 #include <error.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #define OPTION_LINE 'o'
 #define OPEN_BLOCK_LINE 'b'
@@ -40,7 +40,7 @@ typedef struct Block {
   struct Block **childs;
 } Block;
 
-void print_block(Block *block, int depth);
+void print_block(Block *block, int depth, char **dst);
 
 Block *make_block() {
   Block *block = (Block *)malloc(sizeof(Block));
@@ -236,19 +236,29 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  print_block(main_block, 0);
+  char *content = NULL;
+  print_block(main_block, 0, &content);
 
+  printf("%s\n", content);
+
+  free(content);
   free(options);
   free(line);
   fclose(stream);
   exit(EXIT_SUCCESS);
 }
 
-void print_block(Block *block, int depth) {
+void print_block(Block *block, int depth, char **dst) {
+  char buf[BUFSIZ];
   char tabs[20];
   int nspace;
   int next_depth;
   int i;
+
+  if (*dst == NULL) {
+    *dst = (char *)malloc(sizeof(char) * BUFSIZ);
+    (*dst)[0] = '\0';
+  }
 
   if (depth != 0) {
     next_depth = depth + 1;
@@ -264,9 +274,11 @@ void print_block(Block *block, int depth) {
 
   tabs[i] = '\0';
   if (depth == 0) {
-    printf("interface %s {\n", block->name);
+    sprintf(buf, "interface %s {\n", block->name);
+    strcat(*dst, buf);
   } else {
-    printf("%s%s: {\n", tabs, block->name);
+    sprintf(buf, "%s%s: {\n", tabs, block->name);
+    strcat(*dst, buf);
   }
 
   for (int i = 0; i < block->varno; i++) {
@@ -280,16 +292,19 @@ void print_block(Block *block, int depth) {
     } else if (block->variables[i]->type == BOOL) {
       type = "boolean";
     }
-    printf("%s  %s: %s;\n", tabs, identifier, type);
+    sprintf(buf, "%s  %s: %s;\n", tabs, identifier, type);
+    strcat(*dst, buf);
   }
 
   for (int i = 0; i < block->childno; i++) {
-    print_block(block->childs[i], next_depth);
+    print_block(block->childs[i], next_depth, dst);
   }
 
   if (depth == 0) {
-    printf("};\n");
+    sprintf(buf, "};\n");
+    strcat(*dst, buf);
   } else {
-    printf("%s};\n", tabs);
+    sprintf(buf, "%s};\n", tabs);
+    strcat(*dst, buf);
   }
 }
