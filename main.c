@@ -40,7 +40,7 @@ typedef struct Block {
   struct Block **childs;
 } Block;
 
-void print_block(Block *block, int depth, char **dst);
+void format_to_ts(Block *block, int depth, char **dst);
 
 Block *make_block() {
   Block *block = (Block *)malloc(sizeof(Block));
@@ -194,6 +194,8 @@ int main(int argc, char *argv[]) {
   ssize_t len = 0;
   int i, lineno, block_state;
 
+  FILE *ofile;
+
   block_state = IN_BLOCK;
   lineno = 0;
 
@@ -201,11 +203,12 @@ int main(int argc, char *argv[]) {
   Block *main_block = make_block();
   main_block->name = "Configuration";
 
-  if (argc != 2) {
-    fprintf(stderr, "Usage: %s <path>\n", argv[0]);
+  if (argc != 3) {
+    fprintf(stderr, "Usage: %s <input path> <output path>\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
+  ofile = fopen(argv[2], "w");
   stream = fopen(argv[1], "r");
 
   if (stream == NULL) {
@@ -237,9 +240,9 @@ int main(int argc, char *argv[]) {
   }
 
   char *content = NULL;
-  print_block(main_block, 0, &content);
+  format_to_ts(main_block, 0, &content);
 
-  printf("%s\n", content);
+  fputs(content, ofile);
 
   free(content);
   free(options);
@@ -248,7 +251,7 @@ int main(int argc, char *argv[]) {
   exit(EXIT_SUCCESS);
 }
 
-void print_block(Block *block, int depth, char **dst) {
+void format_to_ts(Block *block, int depth, char **dst) {
   char buf[BUFSIZ];
   char tabs[20];
   int nspace;
@@ -297,7 +300,7 @@ void print_block(Block *block, int depth, char **dst) {
   }
 
   for (int i = 0; i < block->childno; i++) {
-    print_block(block->childs[i], next_depth, dst);
+    format_to_ts(block->childs[i], next_depth, dst);
   }
 
   if (depth == 0) {
