@@ -1,24 +1,24 @@
 interface Configuration {
   enterprise: {
-    PORT: number;
+    port: number;
     database: {
-      POSTGRES_DATABASE: string;
-      POSTGRES_PORT: number;
+      postgresDatabase: string;
+      postgresPort: number;
     };
     auth: {
-      JWT_ACCESS_SECRET: string;
-      JWT_REFRESH_SECRET: string;
+      jwtAccessSecret: string;
+      jwtRefreshSecret: string;
     };
   };
   ecommerce: {
-    PORT: number;
+    port: number;
     database: {
-      ECOMMERCE_DATABASE: string;
-      ECOMMERCE_PORT: number;
+      ecommerceDatabase: string;
+      ecommercePort: number;
     };
     auth: {
-      ECOMMERCE_ACCESS_SECRET: string;
-      ECOMMERCE_REFRESH_SECRET: string;
+      ecommerceAccessSecret: string;
+      ecommerceRefreshSecret: string;
     };
   };
-}
+};

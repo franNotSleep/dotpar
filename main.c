@@ -1,46 +1,11 @@
 #include "get_words.c"
+#include "to_ts.c"
 #include <ctype.h>
 #include <error.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define OPTION_LINE 'o'
-#define OPEN_BLOCK_LINE 'b'
-
-#define VAR_SECTION "#t"
-
-#define CLOSE_BLOCK "#q"
-#define OPEN_BLOCK "#b"
-
-#define IN_BLOCK 1
-#define OUT_BLOCK 0
-
-#define MAX_CHILD_BLOCKS 10
-#define MAX_VARIABLES 100
-
-typedef enum { INT, STR, BOOL } Type;
-typedef enum { CAMEL_CASE, PASCAL_CASE, SNAKE_CASE } CaseType;
-
-typedef struct {
-  CaseType case_type;
-} Options;
-
-typedef struct Variable {
-  Type type;
-  char *identifier;
-} Variable;
-
-typedef struct Block {
-  char *name;
-  int childno;
-  int varno;
-  struct Variable **variables;
-  struct Block **childs;
-} Block;
-
-void format_to_ts(Block *block, int depth, char **dst);
 
 Block *make_block() {
   Block *block = (Block *)malloc(sizeof(Block));
@@ -63,23 +28,6 @@ void set_case_option(char *option_val, Options *options) {
     fprintf(stderr, "Unknown case. Available: case | pascal | camel\n");
     exit(EXIT_FAILURE);
   }
-}
-
-void camel_case(char *src, char **dst) {
-  int i = 0;
-  *dst = (char *)malloc(sizeof(char) * strlen(src) + 1);
-
-  while (*src != '\0') {
-
-    if (*src == '_') {
-      *(*dst + i++) = toupper(*++src);
-      ++src;
-      continue;
-    }
-
-    *(*dst + i++) = tolower(*src++);
-  }
-  *(*dst + i) = '\0';
 }
 
 void parse_option(const char *line, Options *options) {
@@ -249,65 +197,4 @@ int main(int argc, char *argv[]) {
   free(line);
   fclose(stream);
   exit(EXIT_SUCCESS);
-}
-
-void format_to_ts(Block *block, int depth, char **dst) {
-  char buf[BUFSIZ];
-  char tabs[20];
-  int nspace;
-  int next_depth;
-  int i;
-
-  if (*dst == NULL) {
-    *dst = (char *)malloc(sizeof(char) * BUFSIZ);
-    (*dst)[0] = '\0';
-  }
-
-  if (depth != 0) {
-    next_depth = depth + 1;
-    nspace = pow(2, depth);
-  } else {
-    nspace = 0;
-    next_depth = 1;
-  }
-
-  for (i = 0; i < nspace; i++) {
-    tabs[i] = ' ';
-  }
-
-  tabs[i] = '\0';
-  if (depth == 0) {
-    sprintf(buf, "interface %s {\n", block->name);
-    strcat(*dst, buf);
-  } else {
-    sprintf(buf, "%s%s: {\n", tabs, block->name);
-    strcat(*dst, buf);
-  }
-
-  for (int i = 0; i < block->varno; i++) {
-    char *identifier = block->variables[i]->identifier;
-    char *type;
-
-    if (block->variables[i]->type == INT) {
-      type = "number";
-    } else if (block->variables[i]->type == STR) {
-      type = "string";
-    } else if (block->variables[i]->type == BOOL) {
-      type = "boolean";
-    }
-    sprintf(buf, "%s  %s: %s;\n", tabs, identifier, type);
-    strcat(*dst, buf);
-  }
-
-  for (int i = 0; i < block->childno; i++) {
-    format_to_ts(block->childs[i], next_depth, dst);
-  }
-
-  if (depth == 0) {
-    sprintf(buf, "};\n");
-    strcat(*dst, buf);
-  } else {
-    sprintf(buf, "%s};\n", tabs);
-    strcat(*dst, buf);
-  }
 }

@@ -19,15 +19,15 @@ typedef struct {
   CaseType case_type;
 } Options;
 
-typedef struct {
+typedef struct Variable {
   Type type;
   char *identifier;
 } Variable;
 
-typedef struct {
+typedef struct Block {
   char *name;
   int childno;
   int varno;
-  Variable **variables;
-  Block **childs;
+  struct Variable **variables;
+  struct Block **childs;
 } Block;
