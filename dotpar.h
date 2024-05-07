@@ -31,3 +31,6 @@ typedef struct Block {
   struct Variable **variables;
   struct Block **childs;
 } Block;
+
+
+void format_to_ts(Block *block, int depth, char **dst);

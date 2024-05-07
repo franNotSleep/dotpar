@@ -1,11 +1,11 @@
 #include "get_words.c"
-#include "to_ts.c"
 #include <ctype.h>
 #include <error.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "dotpar.h"
 
 Block *make_block() {
   Block *block = (Block *)malloc(sizeof(Block));
@@ -156,11 +156,17 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  printf("ofile: %s\n", argv[2]);
   ofile = fopen(argv[2], "w");
   stream = fopen(argv[1], "r");
 
+  if (ofile == NULL) {
+    fprintf(stderr, "Unable to create the file: %s\n", argv[2]);
+    exit(EXIT_FAILURE);
+  }
+
   if (stream == NULL) {
-    fprintf(stderr, "fopen\n");
+    fprintf(stderr, "Unable to read the file: %s\n", argv[1]);
     exit(EXIT_FAILURE);
   }
 
