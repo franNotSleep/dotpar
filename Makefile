@@ -9,3 +9,6 @@ dotpar.o: dotpar.c dotpar.h
 
 to_ts.o: to_ts.c dotpar.h
 	gcc -c to_ts.c
+
+clean:
+	rm to_ts.o dotpar.o
