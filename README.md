@@ -101,17 +101,10 @@ interface Configuration {
 };
 ```
 
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request with your improvements.
-
-## Contact
-
-For any questions or feedback, please reach out to [your email/contact information].
 
 ---
 
